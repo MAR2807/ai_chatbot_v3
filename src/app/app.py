@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  
+CORS(app, origins=["https://ai-chatbot-v3-rfi0yhlma-mar2807s-projects.vercel.app"])  
 
 aws_access_key_id = os.getenv('NEXT_PUBLIC_AWS_ACCESS_KEY_ID')
 aws_secret_access_key = os.getenv('NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY')
