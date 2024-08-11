@@ -67,5 +67,6 @@ def invoke_model():
         return jsonify({"message": "This endpoint is used for invoking the model via POST requests."}), 200
 
 
-if __name__ == '__main__':
-    app.run(port=8080)
+# Do not use app.run() when deploying to Vercel
+# if __name__ == '__main__':
+#     app.run(port=8080)
