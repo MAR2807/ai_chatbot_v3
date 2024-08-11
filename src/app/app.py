@@ -28,7 +28,7 @@ except (NoCredentialsError, PartialCredentialsError) as e:
 
 
 
-@app.route('/api/invoke', methods=['POST'])
+@app.route('/api/invoke', methods=['POST', 'GET'])
 def invoke_model():
     data = request.get_json()
     new_message = data.get('newmessage')
