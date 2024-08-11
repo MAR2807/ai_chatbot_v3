@@ -18,97 +18,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 
-//TO DO:
-//Add user ID and login functions
-// differentiate each user's messages by implementing user ID into the api call and to retrieve messages
-
-
-
-
 const words = ["Assistant", "Chatbot", "Friend", "Helper", "Advisor"];
 const animatedHeader = "Hello I am Travell, your Personal";
-
-
-if (!process.env.NEXT_PUBLIC_OPENAI_API_KEY) {
-  console.error("Error: The OPENAI_API_KEY environment variable is missing or empty.");
-}
-//HIDE KEY WHEN DONE
-const openai = new openAI({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY, dangerouslyAllowBrowser:true });
-//HIDE KEY WHEN DONE
-
-
-
-
-const systemPrompt =`
-You are an AI assistant for a
-travel app designed to enhance users' travel experiences by providing personalized suggestions based on their preferences and interests. Here are the functionalities and details you should consider when interacting with users and providing recommendations:
-
-
-User Input:
-
-
-Collect data about the travel destination, number of people in the group, and their interests and hobbies.
-Data Gathering:
-
-
-Gather comprehensive information about the surrounding area of the travel destination, including:
-Restaurants
-Landmarks
-Parks
-Attractions
-Personalized Recommendations:
-
-
-Utilize AI to analyze the travel group's interests and hobbies.
-Display suggestions for restaurants and attractions that align with these interests.
-Each suggestion should include:
-Distance from the user's location
-Opening and closing times
-Additional relevant details (e.g., type of cuisine, special features of landmarks, etc.)
-Daily Trip Planning:
-
-
-Create a daily trip plan for the user, incorporating suggested activities and places to visit.
-Ensure the trip plan is well-organized and takes into account the opening and closing times of each suggested location.
-Provide options to customize the trip plan based on user feedback.
-Your goal is to make travel planning seamless and enjoyable for users by providing highly relevant and useful suggestions, ensuring that their travel experience is tailored to their preferences.
-`;
-
-
-
-
-
-
-async function getOpenAIResponse(message: string): Promise<string> {
-
-
- 
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message },
-      ],
-    });
-    console.log(response);
-    // Extract the content from the response
-    const content = response.choices[0].message.content ?? "No response from OpenAI.";
-    return content;
-  } catch (error) {
-    console.log(error);
-    return "Error fetching response from OpenAI.";
-  }
-}
-
-
-
-
-
-
-
-
-
 
 
 
@@ -118,6 +29,7 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [userID, setUserID] = useState("");
   const [data, setData] = useState<Message[]>([]);
+  const [claude3response, setClaude3response] = useState("");
 
 
   const Router = useRouter();
@@ -138,6 +50,25 @@ export default function Home() {
     return () => unsubscribe();
   }, [Router]);
 
+
+  const fetchClaude3Response = async (newMessage: string) => {
+    try {
+      const response = await fetch("http://localhost:8080/api/invoke", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ newmessage: newMessage })
+      });
+      const data = await response.json();
+      setClaude3response(data.response);
+      console.log(data.response);
+      return data.response;
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      throw error;
+    }
+  };
 
  
   interface Message {
@@ -173,9 +104,9 @@ export default function Home() {
  
     try {
       await addDoc(collection(db, 'user-messages'), { text: newMessage, timestamp: Timestamp.now(), origin: "user", userID: userID });
- 
-      const apiResponse = await getOpenAIResponse(newMessage);
-      await addDoc(collection(db, 'user-messages'), { text: apiResponse, timestamp: Timestamp.now(), origin: "chatbot",  userID: userID });
+      const claude3response= await fetchClaude3Response(newMessage);
+      await addDoc(collection(db, 'user-messages'), { text: claude3response, timestamp: Timestamp.now(), origin: "chatbot",  userID: userID });
+
     } catch (error) {
       console.error("Error fetching response from OpenAI:", error);
     }
@@ -191,10 +122,6 @@ export default function Home() {
   };
 
 
-  const handleLoginNavigate = () => {
-    Router.push("./login");
-  }
-
 
   const handleLogOut = () =>{
     signOut(auth).then(() => {
@@ -206,13 +133,6 @@ export default function Home() {
 
   }
 
-
-
-
-
-
-  // const leftMessages = combinedMessages.filter(message => messages.includes(message));
-  // const rightMessages = combinedMessages.filter(message => initialMessages.includes(message));
  
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -227,6 +147,9 @@ export default function Home() {
         <ShimmerButton onClick={handleLogOut}>
           <h3 style={{ color: "white" }}>LogOut</h3>
         </ShimmerButton>
+
+        
+        
       </div>
 
 
@@ -242,10 +165,11 @@ export default function Home() {
           style={{ marginTop: "20px", position: "relative" }}
         >
           <WordRotate words={words} />
+          
         </div>
       </div>
 
-
+      
       <div
         style={{
           border: "0px solid black",
