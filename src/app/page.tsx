@@ -52,8 +52,14 @@ export default function Home() {
 
 
   const fetchClaude3Response = async (newMessage: string) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    if(!apiUrl) {
+      console.error("API URL not found");
+      throw new Error("API URL not found");
+    }
     try {
-      const response = await fetch("http://localhost:8080/api/invoke", {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -95,9 +101,11 @@ export default function Home() {
     });
 
 
-    // Cleanup the listener on component unmount
+   
     return () => querySnapshot();
   }, []);
+
+
 
 
   const sendMessage = async (newMessage: string) => {
